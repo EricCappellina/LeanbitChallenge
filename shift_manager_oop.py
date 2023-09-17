@@ -114,40 +114,46 @@ class Tractus:
 
     def fill_availabilities(self):
         """
-        function that is responsible for writing, for each developer, all the workdays, weekend days and holidays
-        given the period (with the help of 4 functions: calculate_workdays_and_holidays
-                                                        calculate_total_days,
-                                                        is_local_holiday_a_workday,
-                                                        is_birthday_a_workday)
+        function that is responsible for writing, for each project, all the workdays, weekend days, holidays and
+        if it is feasible or not (with the help of 4 functions: calculate_workdays_and_holidays
+                                                               calculate_total_days,
+                                                               is_local_holiday_a_workday,
+                                                               is_birthday_a_workday)
         """
-        for period in self.data['periods']:
-            workdays, weekend_days, holidays = self.calculate_workdays_and_holidays(period['since'], period['until'])
+        for project in self.data['projects']:
+            workdays_all_workers = 0
+            workdays, weekend_days, holidays = self.calculate_workdays_and_holidays(project['since'], project['until'])
 
-            total_days = self.calculate_total_days(period['since'], period['until'])
+            total_days = self.calculate_total_days(project['since'], project['until'])
 
             for local_holiday in self.data['local_holidays']:
-                local_holiday_bool = self.is_local_holiday_a_workday(period['since'], period['until'],
+                local_holiday_bool = self.is_local_holiday_a_workday(project['since'], project['until'],
                                                                      local_holiday['day'])
                 # adjust the number of workdays and holidays
                 workdays -= int(local_holiday_bool)
                 holidays += int(local_holiday_bool)
 
             for developer in self.data['developers']:
-                birthday_bool = self.is_birthday_a_workday(period['since'], period['until'], developer['birthday'])
+                birthday_bool = self.is_birthday_a_workday(project['since'], project['until'], developer['birthday'])
 
                 # adjust the number of workdays and holidays
                 workdays_developer = workdays - int(birthday_bool)
-                holidays_developer = holidays + int(birthday_bool)
+                workdays_all_workers += workdays_developer
 
-                availability = {
-                    'developer_id': developer['id'],
-                    'period_id': period['id'],
-                    'total_days': total_days,
-                    'workdays': workdays_developer,
-                    'weekend_days': weekend_days,
-                    'holidays': holidays_developer,
-                }
-                self.availabilities.append(availability)
+            if workdays_all_workers >= project['effort_days']:
+                feasibility_bool = True
+            else:
+                feasibility_bool = False
+
+            availability = {
+                'project_id': project['id'],
+                'total_days': total_days,
+                'workdays': workdays,
+                'weekend_days': weekend_days,
+                'holidays': holidays,
+                'feasibility': feasibility_bool
+            }
+            self.availabilities.append(availability)
 
     def create_output_file(self, output_file_path):
         """function that takes as input the output file path.
