@@ -8,7 +8,7 @@ from shift_manager_oop import Tractus
 ####################
 
 # JSON file path
-INPUT_DATA_FILE_PATH = r"C:\Users\denis\OneDrive\Documenti\GitHub\ruby-challenge\level1\data.json"
+INPUT_DATA_FILE_PATH = r"C:\Users\denis\OneDrive\Documenti\GitHub\ruby-challenge\level2\data.json"
 
 # Define Italy's holiday dates
 ITALIAN_HOLIDAYS = [
@@ -26,7 +26,7 @@ ITALIAN_HOLIDAYS = [
     "2017-12-26",  # Santo Stefano
 ]
 
-OUTPUT_FILE_PATH = r'C:\Users\denis\OneDrive\Documenti\GitHub\ruby-challenge\level1\my_output.json'
+OUTPUT_FILE_PATH = r'C:\Users\denis\OneDrive\Documenti\GitHub\ruby-challenge\level2\my_output.json'
 
 ######################
 #    MAIN PROGRAM    #
