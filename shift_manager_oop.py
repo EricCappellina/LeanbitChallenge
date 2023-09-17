@@ -58,23 +58,101 @@ class Tractus:
 
         return workdays, weekend_days, holidays
 
+    def is_local_holiday_a_workday(self, since, until, local_holiday):
+        """
+        Function that takes as inputs:
+        since: beginning date in string format
+        until: ending date in string format
+        local_holiday: date in which the local holiday takes place
+
+        The output will be a boolean value: True if the local holiday corresponds to a workday else False
+        """
+        since_date = datetime.strptime(since, "%Y-%m-%d")
+        until_date = datetime.strptime(until, "%Y-%m-%d")
+        local_holiday_date = datetime.strptime(local_holiday, "%Y-%m-%d")
+
+        if (since_date <= local_holiday_date <= until_date) & \
+                (local_holiday_date.weekday() < 5) & \
+                (local_holiday_date not in self.italian_holidays):
+            return True
+
+        return False
+
+    def is_birthday_a_workday(self, since, until, birthday):
+        """
+        Function that takes as inputs:
+        since: beginning date in string format
+        until: ending date in string format
+        birthday: date in which the birthday is celebrated
+
+        The output will be a boolean value: True if the birthday corresponds to a workday else False
+        """
+        since_date = datetime.strptime(since, "%Y-%m-%d")
+        until_date = datetime.strptime(until, "%Y-%m-%d")
+        birthday_date = datetime.strptime(birthday, "%Y-%m-%d")
+        birthday_date = birthday_date.replace(year=since_date.year)
+
+        if (since_date <= birthday_date <= until_date) & \
+                (birthday_date.weekday() < 5) & \
+                (birthday_date not in self.italian_holidays):
+            return True
+
+        return False
+
+    def developer_availability(self, since, until, birthday, local_holidays):
+        """
+        Function that takes as inputs:
+        since: beginning date in string format
+        until: ending date in string format
+        birthday: date in which the birthday is celebrated
+        local_holidays: a list of local holidays dates
+
+        The output will be the calculation of workdays, weekend days and holidays
+        (with the help of the 3 functions:
+        calculate_workdays_and_holidays,
+        is_birthday_a_workday,
+        is_local_holiday_a_workday)
+        """
+        workdays, weekend_days, holidays = self.calculate_workdays_and_holidays(since,  until)
+
+        birthday_bool = self.is_birthday_a_workday(since, until, birthday)
+
+        # adjust the number of workdays and holidays
+        workdays -= int(birthday_bool)
+        holidays += int(birthday_bool)
+
+        for local_holiday in local_holidays:
+            local_holiday_bool = self.is_local_holiday_a_workday(since, until, local_holiday['day'])
+            # adjust the number of workdays and holidays
+            workdays -= int(local_holiday_bool)
+            holidays += int(local_holiday_bool)
+
+        return workdays, weekend_days, holidays
+
     def fill_availabilities(self):
         """
-        function that is responsible for writing all the workdays, weekend days and holidays
-        for each period in the input data file (with the help of the calculate_workdays_and_holidays function)
+        function that is responsible for writing, for each developer, all the workdays, weekend days and holidays
+        given the period (with the help of the developer_availability function)
         """
         for period in self.data['periods']:
-            workdays, weekend_days, holidays = self.calculate_workdays_and_holidays(period['since'], period['until'])
-            total_days = (datetime.strptime(period['until'], "%Y-%m-%d") -
-                          datetime.strptime(period['since'], "%Y-%m-%d")).days + 1
-            availability = {
-                'period_id': period['id'],
-                'total_days': total_days,
-                'workdays': workdays,
-                'weekend_days': weekend_days,
-                'holidays': holidays,
-            }
-            self.availabilities.append(availability)
+
+            for developer in self.data['developers']:
+                workdays, weekend_days, holidays = self.developer_availability(period['since'],
+                                                                               period['until'],
+                                                                               developer['birthday'],
+                                                                               self.data['local_holidays'])
+
+                total_days = (datetime.strptime(period['until'], "%Y-%m-%d") -
+                              datetime.strptime(period['since'], "%Y-%m-%d")).days + 1
+                availability = {
+                    'developer_id': developer['id'],
+                    'period_id': period['id'],
+                    'total_days': total_days,
+                    'workdays': workdays,
+                    'weekend_days': weekend_days,
+                    'holidays': holidays,
+                }
+                self.availabilities.append(availability)
 
     def create_output_file(self, output_file_path):
         """function that takes as input the output file path.
